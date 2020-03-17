@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
-// @namespace    https://iotics.com/
+// @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
 // @version      0.1
 // @description  Script to help with submitting timesheets in Xero
 // @author       Miroslav Sommer
