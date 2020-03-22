@@ -17,7 +17,7 @@
     'use strict';
 
      const data = {
-         version: '0.0.1',
+         version: '0.0.2',
          appData: null,
          appElement: null,
          starredProjects: GM_getValue('starredProjects', {}),
@@ -92,11 +92,11 @@
      ._star:hover { color: #e0f }
      ._star::after { content: " \\2606" }
      ._star.__active::after { content: " \\2605" }
-     ._projectStarToggle span { cursor: pointer }
-     ._projectStarToggle ._all::after { content: "__"; width: 20px; border: 1px solid #aaa; background-color: #3700b3; border-radius: 4px; margin-left: 10px; }
-     ._projectStarToggle ._starred::before { content: "__"; width: 20px; border: 1px solid #000; color: #fff; border-radius: 4px; margin-right: 10px; margin-left: -2px; }
-     ._starred_only ._projectStarToggle ._all::after { content: "__"; width: 20px; border: 1px solid #000; background-color: #fff; color: #fff; border-radius: 4px; margin-left: 10px; }
-     ._starred_only ._projectStarToggle ._starred::before { content: "__"; width: 20px; border: 1px solid #aaa; background-color: #3700b3; color: #3700b3; border-radius: 4px; margin-right: 10px; margin-left: -2px; }
+     ._projectStarToggle span { cursor: pointer; padding: 4px; }
+     ._projectStarToggle ._all { border: 1px solid #ddd; border-radius: 6px 0 0 6px; background-color: #0078c8; color: #fff; }
+     ._projectStarToggle ._starred { border: 1px solid #ddd; border-radius: 0 6px 6px 0; color: #000; }
+     ._starred_only ._projectStarToggle ._all { border: 1px solid #ddd; background-color: #fff; color: #000; }
+     ._starred_only ._projectStarToggle ._starred { border: 1px solid #ddd; background-color: #0078c8; color: #fff; }
      ._starred_only .pui-project-row { display: none; }
      ._starred_only .pui-project-row._starred { display: block; }
      ._weekend { background-color: #dde }
@@ -112,7 +112,7 @@
      ._today ._add { left: 210px }
      ._pastMonths { background-color: #eee }
      ._pastMonths ._add { visibility: hidden !important }
-     ._selected { border: 1px solid white; background-color: #3700b3; color: white }
+     ._selected { border: 1px solid white; background-color: #0078c8; color: white }
      ._delete { float: right; visibility: hidden; color: #aaa; font-size: 28px; line-height: 12px; padding: 0 !important; }
      ._delete::after { content: " \\2612" }
      ._pastMonths ._delete { visibility: hidden !important }
