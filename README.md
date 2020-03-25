@@ -20,15 +20,6 @@ Limitations:
 
 ## How to install
 
-This script has two parts
-
-1. Loader - `xero.userscript.js`
-2. Implementation - `xero.timesheets.extension.js`
-
-You only need to install the loader into Tampermonkey/Graesemonkey, as it will automatically use the latest version of the implementation script.
-
-### How to install the loader
-
 1. Install [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en) (on Chrome) or [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) (on Firefox) browser extensions.
 2. Add a new user script with the content of [xero.userscript.js](./xero.userscript.js).
 3. Login to [projects.xero.com](https://projects.xero.com).
