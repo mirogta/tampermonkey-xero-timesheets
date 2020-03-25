@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.3
+// @version      0.0.4
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -39,7 +39,6 @@
     'use strict';
 
      const data = {
-         version: '0.0.3',
          appData: null,
          appElement: null,
          starredProjects: GM_getValue('starredProjects', {}),
@@ -607,7 +606,7 @@
      }
 
      function load() {
-         console.log(`Xero Timesheets User Script v${data.version}`);
+         console.log(`Xero Timesheets User Script`);
          loadAppData();
          addMyTimeLink();
          switch(document.location.pathname) {
