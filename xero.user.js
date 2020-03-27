@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.5
+// @version      0.0.6
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -35,19 +35,10 @@
 // - GET one projects' timesheets:
 //   fetch("https://projects.xero.com/api/projects/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"referrer":"https://projects.xero.com/project/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"});
 
+
+// Common functions
 (function() {
     'use strict';
-
-    const data = {
-        appData: null,
-        appElement: null,
-        starredProjects: GM_getValue('starredProjects', {}),
-        showOnlyStarredProjects: GM_getValue('showOnlyStarredProjects', false),
-    };
-
-    const constants = {
-        menuSelectedClass: 'xrh-tab--body-is-selected',
-    };
 
     const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 
@@ -65,121 +56,253 @@
         return diffDays < 0;
     };
 
-     // waitForKeyElements forked from source: https://gist.github.com/raw/2625891/waitForKeyElements.js
-     function waitForKeyElements(selectorTxt, actionFunction) {
-         var btargetsFound;
-         var targetNodes = document.querySelectorAll(selectorTxt);
-         if (targetNodes && targetNodes.length > 0) {
-             btargetsFound = true;
-             targetNodes.forEach(function(el) {
-                 var alreadyFound = el.dataset.alreadyFound || false;
-                 if (!alreadyFound) {
-                     var cancelFound = actionFunction(el);
-                     if(cancelFound) {
-                         btargetsFound = false;
-                     } else {
-                         el.dataset.alreadyFound = true;
-                     }
-                 }
-             });
-         }
+    // waitForKeyElements forked from source: https://gist.github.com/raw/2625891/waitForKeyElements.js
+    function waitForKeyElements(selectorTxt, actionFunction) {
+        var btargetsFound;
+        var targetNodes = document.querySelectorAll(selectorTxt);
+        if (targetNodes && targetNodes.length > 0) {
+            btargetsFound = true;
+            targetNodes.forEach(function(el) {
+                var alreadyFound = el.dataset.alreadyFound || false;
+                if (!alreadyFound) {
+                    var cancelFound = actionFunction(el);
+                    if(cancelFound) {
+                        btargetsFound = false;
+                    } else {
+                        el.dataset.alreadyFound = true;
+                    }
+                }
+            });
+        }
 
-         //--- Get the timer-control variable for this selector.
-         var controlObj = waitForKeyElements.controlObj || {};
-         var controlKey = selectorTxt.replace (/[^\w]/g, "_");
-         var timeControl = controlObj [controlKey];
+        //--- Get the timer-control variable for this selector.
+        var controlObj = waitForKeyElements.controlObj || {};
+        var controlKey = selectorTxt.replace (/[^\w]/g, "_");
+        var timeControl = controlObj [controlKey];
 
-         //--- Set a timer, if needed.
-         if(! timeControl) {
-             timeControl = setInterval(function() {
-                 waitForKeyElements(selectorTxt, actionFunction);
-             }, 300);
-             controlObj [controlKey] = timeControl;
-         }
-         waitForKeyElements.controlObj = controlObj;
-     }
+        //--- Set a timer, if needed.
+        if(! timeControl) {
+            timeControl = setInterval(function() {
+                waitForKeyElements(selectorTxt, actionFunction);
+            }, 300);
+            controlObj [controlKey] = timeControl;
+        }
+        waitForKeyElements.controlObj = controlObj;
+    }
 
-     function createElement(html) {
-         var template = document.createElement('template');
-         // Never return a text node of whitespace as the result
-         html = html.trim();
-         template.innerHTML = html;
-         return template.content.firstChild;
-     }
+    function createElement(html) {
+        var template = document.createElement('template');
+        // Never return a text node of whitespace as the result
+        html = html.trim();
+        template.innerHTML = html;
+        return template.content.firstChild;
+    }
 
-     // See https://www.w3schools.com/charsets/ref_utf_symbols.asp
-     GM_addStyle(`
-     ._star { padding: 10px }
-     ._star:hover { color: #e0f }
-     ._star::after { content: " \\2606" }
-     ._star.__active::after { content: " \\2605" }
-     ._projectStarToggle span { cursor: pointer; padding: 4px; }
-     ._projectStarToggle ._all { border: 1px solid #ddd; border-radius: 6px 0 0 6px; background-color: #0078c8; color: #fff; }
-     ._projectStarToggle ._starred { border: 1px solid #ddd; border-radius: 0 6px 6px 0; color: #000; }
-     ._starred_only ._projectStarToggle ._all { border: 1px solid #ddd; background-color: #fff; color: #000; }
-     ._starred_only ._projectStarToggle ._starred { border: 1px solid #ddd; background-color: #0078c8; color: #fff; }
-     ._starred_only .pui-project-row { display: none; }
-     ._starred_only .pui-project-row._starred { display: block; }
-     ._weekend { background-color: #dde }
-     ._today { margin-left: -31px; }
-     ._today::before { content: " \\2794"; padding-top: 6px; margin-right: 14px; font-size: 20px; }
-     ._time span { display: inline-block; padding: 0 4px; }
-     ._timerecord { display: inline-block; border: 1px solid #fff; border-radius:4px; padding: 9px; width: 350px; white-space: nowrap; text-overflow: ellipsis; }
-     ._timerecord:hover { border: 1px solid #aaa; cursor: pointer }
-     ._add { visibility: hidden; cursor: pointer }
-     #app._selecting .xui-pickitem:hover ._add { visibility: visible }
-     ._add { position: absolute; left: 180px; top: 4px; padding: 10px; border-radius: 4px; }
-     ._add:hover { background-color: #EF5350; color: white }
-     ._today ._add { left: 210px }
-     ._pastMonths { background-color: #eee }
-     ._pastMonths ._add { visibility: hidden !important }
-     ._selected { border: 1px solid white; background-color: #0078c8; color: white }
-     ._delete { float: right; visibility: hidden; color: #aaa; font-size: 28px; line-height: 12px; padding: 0 !important; }
-     ._delete::after { content: " \\2612" }
-     ._pastMonths ._delete { visibility: hidden !important }
-     ._timerecord:hover ._delete { visibility: visible }
-     ._timerecord:hover ._delete:hover { color: #b00020; cursor: pointer }
-     ._timerecord:not([data-time-entry-id]) { color: #aaa }
-     ._timerecord:not([data-time-entry-id])::after { content: " \\262f"; float: right; -webkit-animation: spin 1s infinite linear; }
-     ._timerecord:not([data-time-entry-id]) ._delete { visibility: hidden } // can't delete if there's no id (yet)
-     @-moz-keyframes spin {
-         from { -moz-transform: rotate(0deg); }
-         to { -moz-transform: rotate(360deg); }
-     }
-     @-webkit-keyframes spin {
-         from { -webkit-transform: rotate(0deg); }
-         to { -webkit-transform: rotate(360deg); }
-     }
-     @keyframes spin {
-         from {transform:rotate(0deg);}
-         to {transform:rotate(360deg);}
-     }
-     ._project { font-weight: bold; }
-     ._task {  }
-     ._duration { }
-     ._add::after { content: "Paste" }
-     .xui-picklist { width: 100% }
-     .xui-pickitem { border-bottom: 1px solid #eee; }
-     .xui-pickitem-text:hover { background: #fff; cursor: default }
-     `);
+    window._xero = window._xero || {};
+    window._xero.waitForKeyElements = waitForKeyElements;
+    window._xero.createElement = createElement;
+})();
+
+
+// My Time link
+(function() {
+    'use strict';
+
+    const createElement = window._xero.createElement;
+
+    const constants = {
+        menuSelectedClass: 'xrh-tab--body-is-selected',
+    };
+
+    function addMyTimeLink() {
+        console.log('- adding projects overlay');
+        const menu = document.body.querySelector('.xrh-navigation');
+        const link = createElement('<li class="xrh-tab" id="_link"><button type="button" class="xrh-focusable xrh-tab--body">My Time</button></li>');
+        link.querySelector('button').addEventListener('click', navigateToMyTimeLink, false);
+        menu.append(link);
+    }
+
+    function clearSelectedMenu() {
+        document.body.querySelector('.xrh-navigation').querySelectorAll('button').forEach(function(el) {el.classList.remove(constants.menuSelectedClass);});
+    }
+
+    function selectMyTimeLink() {
+        document.body.querySelector('#_link button').classList.add(constants.menuSelectedClass);
+    }
+
+    function navigateToMyTimeLink(event) {
+        console.log('- navigation to show my time');
+        if(event) {
+            event.preventDefault();
+        }
+        clearSelectedMenu();
+        setTimeout(selectMyTimeLink, 100);
+        window._xero.showMyTime();
+        document.location.hash = 'tampermonkey-my-time';
+        const dataLoadedElement = document.body.querySelector('div[data-loaded]');
+        if(dataLoadedElement) {
+            dataLoadedElement.dataset.loaded = false;
+        }
+    }
+
+    window._xero = window._xero || {};
+    window._xero.addMyTimeLink = addMyTimeLink;
+    window._xero.navigateToMyTimeLink = navigateToMyTimeLink;
+})();
+
+// Project stars
+(function() {
+    'use strict';
+
+    const createElement = window._xero.createElement;
+
+    // See https://www.w3schools.com/charsets/ref_utf_symbols.asp
+    GM_addStyle(`
+._star { padding: 10px }
+._star:hover { color: #e0f }
+._star::after { content: " \\2606" }
+._star.__active::after { content: " \\2605" }
+._projectStarToggle span { cursor: pointer; padding: 4px; }
+._projectStarToggle ._all { border: 1px solid #ddd; border-radius: 6px 0 0 6px; background-color: #0078c8; color: #fff; }
+._projectStarToggle ._starred { border: 1px solid #ddd; border-radius: 0 6px 6px 0; color: #000; }
+._starred_only ._projectStarToggle ._all { border: 1px solid #ddd; background-color: #fff; color: #000; }
+._starred_only ._projectStarToggle ._starred { border: 1px solid #ddd; background-color: #0078c8; color: #fff; }
+._starred_only .pui-project-row { display: none; }
+._starred_only .pui-project-row._starred { display: block; }
+`);
+
+    const data = {
+        starredProjects: GM_getValue('starredProjects', {}),
+        showOnlyStarredProjects: GM_getValue('showOnlyStarredProjects', false),
+    };
 
     function markProjectStarred(el, isActive) {
         const parentRow = el.parentElement.parentElement.parentElement;
         isActive ? parentRow.classList.add('_starred') : parentRow.classList.remove('_starred');
     }
 
-     function projectStarClicked(event) {
-         event.preventDefault();
-         event.stopPropagation()
-         const el = event.target;
-         const activeClass = '__active';
-         const isActive = el.classList.contains(activeClass)
-         const id = el.dataset.id;
-         isActive ? el.classList.remove(activeClass) : el.classList.add(activeClass);
-         isActive ? delete data.starredProjects[id] : data.starredProjects[id] = 1;
-         GM_setValue('starredProjects', data.starredProjects);
-         markProjectStarred(el, !isActive);
+    function projectStarClicked(event) {
+        event.preventDefault();
+        event.stopPropagation()
+        const el = event.target;
+        const activeClass = '__active';
+        const isActive = el.classList.contains(activeClass)
+        const id = el.dataset.id;
+        isActive ? el.classList.remove(activeClass) : el.classList.add(activeClass);
+        isActive ? delete data.starredProjects[id] : data.starredProjects[id] = 1;
+        GM_setValue('starredProjects', data.starredProjects);
+        markProjectStarred(el, !isActive);
+    }
+
+    function addProjectStars() {
+        console.log('- adding project stars');
+        const projects = document.body.querySelectorAll('.pui-project-row');
+        const activeClass = '__active';
+        console.log(`- found ${projects.length} projects`);
+        projects.forEach(function(p) {
+            const id = p.id;
+            const isSet = data.starredProjects[id] || false;
+            const star = document.createElement('div');
+            star.dataset.id = id;
+            star.className = '_star ' + (isSet ? activeClass : '');
+            p.querySelector('.xui-contentblockitem--rightcontent').append(star)
+            star.addEventListener('click', projectStarClicked, false);
+            markProjectStarred(star, isSet);
+        });
      }
+
+    function projectStarsToggleClicked(event) {
+        event.preventDefault();
+        event.stopPropagation()
+        const isStarred = data.showOnlyStarredProjects;
+        const toggle = document.body;
+        data.showOnlyStarredProjects = !isStarred;
+        GM_setValue('showOnlyStarredProjects', data.showOnlyStarredProjects);
+        if(isStarred) {
+            toggle.classList.remove('_starred_only');
+        } else {
+            toggle.classList.add('_starred_only');
+        }
+    }
+
+    function addProjectStarsToggle() {
+        const tabs = document.body.querySelector('.xui-pageheading--actions');
+        const toggle = createElement('<div class="_projectStarToggle"><span class="_all">Show all projects</span><span class="_starred">Show starred projects</span></div>');
+        const isStarred = data.showOnlyStarredProjects;
+        if(isStarred) {
+            document.body.classList.add('_starred_only');
+        }
+        tabs.append(toggle);
+        toggle.addEventListener('click', projectStarsToggleClicked, false);
+    }
+
+     function overlayProjects() {
+         addProjectStars();
+         addProjectStarsToggle();
+     }
+
+    window._xero = window._xero || {};
+    window._xero.overlayProjects = overlayProjects;
+})();
+
+// My Time content
+(function() {
+    'use strict';
+
+    const createElement = window._xero.createElement;
+
+    const data = {
+        appData: null,
+        appElement: null,
+    };
+
+    // See https://www.w3schools.com/charsets/ref_utf_symbols.asp
+     GM_addStyle(`
+._weekend { background-color: #dde }
+._today { margin-left: -31px; }
+._today::before { content: " \\2794"; padding-top: 6px; margin-right: 14px; font-size: 20px; }
+._time span { display: inline-block; padding: 0 4px; }
+._timerecord { display: inline-block; border: 1px solid #fff; border-radius:4px; padding: 9px; width: 350px; white-space: nowrap; text-overflow: ellipsis; }
+._timerecord:hover { border: 1px solid #aaa; cursor: pointer }
+._add { visibility: hidden; cursor: pointer }
+#app._selecting .xui-pickitem:hover ._add { visibility: visible }
+._add { position: absolute; left: 180px; top: 4px; padding: 10px; border-radius: 4px; }
+._add:hover { background-color: #EF5350; color: white }
+._today ._add { left: 210px }
+._pastMonths { background-color: #eee }
+._pastMonths ._add { visibility: hidden !important }
+._selected { border: 1px solid white; background-color: #0078c8; color: white }
+._delete { float: right; visibility: hidden; color: #aaa; font-size: 28px; line-height: 12px; padding: 0 !important; }
+._delete::after { content: " \\2612" }
+._pastMonths ._delete { visibility: hidden !important }
+._timerecord:hover ._delete { visibility: visible }
+._timerecord:hover ._delete:hover { color: #b00020; cursor: pointer }
+._timerecord:not([data-time-entry-id]) { color: #aaa }
+._timerecord:not([data-time-entry-id])::after { content: " \\262f"; float: right; -webkit-animation: spin 1s infinite linear; }
+._timerecord:not([data-time-entry-id]) ._delete { visibility: hidden } // can't delete if there's no id (yet)
+@-moz-keyframes spin {
+   from { -moz-transform: rotate(0deg); }
+   to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+   from { -webkit-transform: rotate(0deg); }
+   to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+   from {transform:rotate(0deg);}
+   to {transform:rotate(360deg);}
+}
+._project { font-weight: bold; }
+._task {  }
+._duration { }
+._add::after { content: "Paste" }
+.xui-picklist { width: 100% }
+.xui-pickitem { border-bottom: 1px solid #eee; }
+.xui-pickitem-text:hover { background: #fff; cursor: default }
+._tip { padding: 10px; font-size: 14px; }
+._tip::before { content: " \\261e"; margin-right: 10px }
+._tip::after { content: "Pro Tip: Hold Shift key to select multiple time entries." }
+`);
 
      function clearSelectedTimeRecords() {
          document.body.querySelectorAll('._selected').forEach(function(node) {
@@ -241,54 +364,6 @@
             }
         }, false);
     }
-
-    function addProjectStars() {
-        console.log('- adding project stars');
-        const projects = document.body.querySelectorAll('.pui-project-row');
-        const activeClass = '__active';
-        console.log(`- found ${projects.length} projects`);
-        projects.forEach(function(p) {
-            const id = p.id;
-            const isSet = data.starredProjects[id] || false;
-            const star = document.createElement('div');
-            star.dataset.id = id;
-            star.className = '_star ' + (isSet ? activeClass : '');
-            p.querySelector('.xui-contentblockitem--rightcontent').append(star)
-            star.addEventListener('click', projectStarClicked, false);
-            markProjectStarred(star, isSet);
-        });
-     }
-
-    function projectStarsToggleClicked(event) {
-        event.preventDefault();
-        event.stopPropagation()
-        const isStarred = data.showOnlyStarredProjects;
-        const toggle = document.body;
-        data.showOnlyStarredProjects = !isStarred;
-        GM_setValue('showOnlyStarredProjects', data.showOnlyStarredProjects);
-        if(isStarred) {
-            toggle.classList.remove('_starred_only');
-        } else {
-            toggle.classList.add('_starred_only');
-        }
-    }
-
-    function addProjectStarsToggle() {
-        const tabs = document.body.querySelector('.xui-pageheading--actions');
-        const toggle = createElement('<div class="_projectStarToggle"><span class="_all">Show all projects</span><span class="_starred">Show starred projects</span></div>');
-        const isStarred = data.showOnlyStarredProjects;
-        if(isStarred) {
-            document.body.classList.add('_starred_only');
-        }
-        tabs.append(toggle);
-        toggle.addEventListener('click', projectStarsToggleClicked, false);
-    }
-
-     function overlayProjects() {
-         addProjectStars();
-         addProjectStarsToggle();
-     }
-
 
      function clearAppContent() {
          if(data.appElement) {
@@ -390,7 +465,6 @@
          createTimeEntryElement(clonedData);
      }
 
-
      function deleteTimeEntryElement(timeEntryId) {
          const el = data.appElement.querySelector(`._timerecord[data-time-entry-id="${timeEntryId}"]`);
          if(el.classList.contains('_selected')) {
@@ -452,7 +526,7 @@
 
      function createTimeDataLayout() {
          const html = '' +
-         '<div class="xui-page-width-standard xui-margin-top-xlarge"><div class="xui-panel xui-margin-bottom">' +
+         '<div class="xui-page-width-standard xui-margin-top-xlarge"><div class="_tip"></div><div class="xui-panel xui-margin-bottom">' +
          '  <div class="xui-padding-large">' + // <= header
          '    <div class="xui-column-3-of-12">' +
          '      <span class="xui-heading-small">Date</span>' +
@@ -576,49 +650,26 @@
          });
      }
 
-
-    function clearSelectedMenu() {
-        document.body.querySelector('.xrh-navigation').querySelectorAll('button').forEach(function(el) {el.classList.remove(constants.menuSelectedClass);});
-    }
-
-    function selectMyTimeLink() {
-        document.body.querySelector('#_link button').classList.add(constants.menuSelectedClass);
-    }
-
-    function navigateToMyTimeLink(event) {
-        console.log('- navigation to show my time');
-        if(event) {
-            event.preventDefault();
-        }
-        clearSelectedMenu();
-        setTimeout(selectMyTimeLink, 100);
-        showMyTime();
-        document.location.hash = 'tampermonkey-my-time';
-        const dataLoadedElement = document.body.querySelector('div[data-loaded]');
-        if(dataLoadedElement) {
-            dataLoadedElement.dataset.loaded = false;
-        }
-    }
-
-     function addMyTimeLink() {
-         console.log('- adding projects overlay');
-         const menu = document.body.querySelector('.xrh-navigation');
-         const link = createElement('<li class="xrh-tab" id="_link"><button type="button" class="xrh-focusable xrh-tab--body">My Time</button></li>');
-         link.querySelector('button').addEventListener('click', navigateToMyTimeLink, false);
-         menu.append(link);
-     }
-
      function loadAppData() {
          data.appData = JSON.parse(document.getElementById('appData').innerText);
      }
 
+    window._xero = window._xero || {};
+    window._xero.showMyTime = showMyTime;
+    window._xero.loadAppData = loadAppData;
+})();
+
+// Loader
+(function() {
+    'use strict';
+
      function load() {
          console.log(`Xero Timesheets User Script`);
-         loadAppData();
-         addMyTimeLink();
+         window._xero.loadAppData();
+         window._xero.addMyTimeLink();
          switch(document.location.pathname) {
              case '/':
-                 overlayProjects();
+                 window._xero.overlayProjects();
                  break;
          }
 
@@ -627,10 +678,10 @@
                  document.location.pathname = '/';
                  return false;
              }
-             navigateToMyTimeLink();
+             window._xero.navigateToMyTimeLink();
          }
          return false;
      }
 
-     waitForKeyElements('[data-loaded="true"]', load);
- })();
+    window._xero.waitForKeyElements('[data-loaded="true"]', load);
+})();
