@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.4
+// @version      0.0.5
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -38,32 +38,32 @@
 (function() {
     'use strict';
 
-     const data = {
-         appData: null,
-         appElement: null,
-         starredProjects: GM_getValue('starredProjects', {}),
-         showOnlyStarredProjects: GM_getValue('showOnlyStarredProjects', false),
-     };
+    const data = {
+        appData: null,
+        appElement: null,
+        starredProjects: GM_getValue('starredProjects', {}),
+        showOnlyStarredProjects: GM_getValue('showOnlyStarredProjects', false),
+    };
 
     const constants = {
         menuSelectedClass: 'xrh-tab--body-is-selected',
     };
 
-     const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+    const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
 
-     Date.prototype.addDays = function(days) {
-         this.setDate(this.getDate() + parseInt(days));
-         return this;
-     };
-     Date.prototype.isWeekend = function() {
-         return this.getDay() == 0 || this.getDay() == 6;
-     };
-     Date.prototype.isInPastMonths = function() {
-         const today = new Date();
-         var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-         const diffDays = Math.round((this - firstDay) / oneDay);
-         return diffDays < 0;
-     };
+    Date.prototype.addDays = function(days) {
+        this.setDate(this.getDate() + parseInt(days));
+        return this;
+    };
+    Date.prototype.isWeekend = function() {
+        return this.getDay() == 0 || this.getDay() == 6;
+    };
+    Date.prototype.isInPastMonths = function() {
+        const today = new Date();
+        var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const diffDays = Math.round((this - firstDay) / oneDay);
+        return diffDays < 0;
+    };
 
      // waitForKeyElements forked from source: https://gist.github.com/raw/2625891/waitForKeyElements.js
      function waitForKeyElements(selectorTxt, actionFunction) {
@@ -188,25 +188,32 @@
          document.getElementById('app').className = '';
      }
 
-     function timeEntryClicked(el) {
+     function timeEntryClicked(event, el) {
          console.log('- selected ', el.dataset);
-         clearSelectedTimeRecords();
-         el.classList.add('_selected');
-         data.appElement.classList.add('_selecting');
+         const selectedClass = '_selected';
+         if(event.shiftKey === true) {
+             // deselect any selected text caused by pressing the shift key
+             window.getSelection().removeAllRanges();
+             el.classList.contains(selectedClass) ? el.classList.remove(selectedClass) : el.classList.add(selectedClass);
+         } else {
+             clearSelectedTimeRecords();
+             el.classList.add(selectedClass);
+         }
+
+         const selectedCount = data.appElement.querySelectorAll(`.${selectedClass}`).length;
+         selectedCount === 0 ? data.appElement.classList.remove('_selecting') : data.appElement.classList.add('_selecting');
      }
 
     function addButtonClicked(event) {
         event.preventDefault();
         event.stopPropagation()
-        const sourceElement = data.appElement.querySelector('._selected');
-        if(sourceElement.length === null) {
-            return false;
-        }
-        const sourceData = sourceElement.dataset
-        const targetData = event.target.dataset;
-        const targetDateUtc = `${targetData.dateId}T00:00:00Z`;
-        cloneTimeEntryElement(sourceData, targetDateUtc);
-        postTimeEntry(sourceData.projectId, sourceData.taskId, sourceData.duration, targetData.dateId)
+        data.appElement.querySelectorAll('._selected').forEach(function(sourceElement) {
+            const sourceData = sourceElement.dataset
+            const targetData = event.target.dataset;
+            const targetDateUtc = `${targetData.dateId}T00:00:00Z`;
+            cloneTimeEntryElement(sourceData, targetDateUtc);
+            postTimeEntry(sourceData.projectId, sourceData.taskId, sourceData.duration, targetData.dateId)
+        });
         return false;
     }
 
@@ -228,9 +235,9 @@
             } else if(event.target.matches('._delete')) {
                 deleteButtonClicked(event);
             } else if (event.target.matches('._timerecord')) {
-                return timeEntryClicked(event.target)
+                return timeEntryClicked(event, event.target)
             } else if(event.target.parentElement.matches('._timerecord')) {
-                return timeEntryClicked(event.target.parentElement)
+                return timeEntryClicked(event, event.target.parentElement)
             }
         }, false);
     }
