@@ -11,7 +11,7 @@ Features:
   * Added a toggle to show only starred projects
 * New "My Time" page:
   * Added "My Time" link to the menu
-  * Added copy&pate like functionality to copy timesheets from a day to another day
+  * Added copy&paste like functionality to copy timesheets from a day to another day
   * You can select multiple timesheets while holding a *Shift* key
   * Added a simple functionality to delete timesheets
 
