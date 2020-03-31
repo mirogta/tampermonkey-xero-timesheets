@@ -12,8 +12,10 @@ Features:
 * New "My Time" page:
   * Added "My Time" link to the menu
   * Added copy&paste like functionality to copy timesheets from a day to another day
+  * You can delete a timesheet using the delete/cross icon - it will ask for a confirmation
   * You can select multiple timesheets while holding a *Shift* key
-  * Added a simple functionality to delete timesheets
+  * You can delete multiple timesheets with a *Delete* key - it will ask for a confirmation
+    * If you hold a *Shift* key, then it won't ask for a confirmation - use this carefully, there's no Undo
 
 Limitations:
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.6
+// @version      0.0.8
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -256,6 +256,10 @@
         appElement: null,
     };
 
+    const keys = {
+        DELETE: 46,
+    };
+
     // See https://www.w3schools.com/charsets/ref_utf_symbols.asp
      GM_addStyle(`
 ._weekend { background-color: #dde }
@@ -301,7 +305,6 @@
 .xui-pickitem-text:hover { background: #fff; cursor: default }
 ._tip { padding: 10px; font-size: 14px; }
 ._tip::before { content: " \\261e"; margin-right: 10px }
-._tip::after { content: "Pro Tip: Hold Shift key to select multiple time entries." }
 `);
 
      function clearSelectedTimeRecords() {
@@ -351,6 +354,25 @@
         }
     }
 
+    function deleteKeyPressed(withoutConfirmation) {
+        const selectedItems = data.appElement.querySelectorAll('._selected');
+        if(selectedItems.length === 0) {
+            return;
+        }
+
+        const message = selectedItems.length === 1 ? "Do you want to delete the selected time entry?" : "WARNING: Are you sure you want to delete all the selected time entries?";
+
+        if(withoutConfirmation === true || confirm(message)) {
+            selectedItems.forEach(function(sourceElement) {
+                const sourceData = sourceElement.dataset;
+                deleteTimeEntry(sourceData.projectId, sourceData.timeEntryId)
+                deleteTimeEntryElement(sourceData.timeEntryId);
+                setTimeout(updateTotals, 100);
+
+            });
+        }
+    }
+
     function registerTimesheetEvents() {
         document.addEventListener('click', function (event) {
             if(event.target.matches('._add')) {
@@ -361,6 +383,12 @@
                 return timeEntryClicked(event, event.target)
             } else if(event.target.parentElement.matches('._timerecord')) {
                 return timeEntryClicked(event, event.target.parentElement)
+            }
+        }, false);
+
+        document.addEventListener('keydown', function(event) {
+            if(event.keyCode === keys.DELETE) {
+                deleteKeyPressed(event.shiftKey);
             }
         }, false);
     }
@@ -526,7 +554,10 @@
 
      function createTimeDataLayout() {
          const html = '' +
-         '<div class="xui-page-width-standard xui-margin-top-xlarge"><div class="_tip"></div><div class="xui-panel xui-margin-bottom">' +
+         '<div class="xui-page-width-standard xui-margin-top-xlarge">' +
+         '  <div class="_tip">' +
+         '  <b>Pro Tips:</b> <ul><li>Hold Shift key to select multiple time entries.</li><li>Press Del key to delete the selected item(s) with a confirmation prompt.</li><li>Hold Shift key and press Del key to delete the selected item(s) without the confirmation (be careful, there\'s no undo).</li></ul>'+
+         '  </div><div class="xui-panel xui-margin-bottom">' +
          '  <div class="xui-padding-large">' + // <= header
          '    <div class="xui-column-3-of-12">' +
          '      <span class="xui-heading-small">Date</span>' +
