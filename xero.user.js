@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.8
+// @version      0.0.9
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -507,14 +507,16 @@
              return;
          }
          data.appElement.querySelectorAll('._total').forEach(function(item) {
-             let totalHours = 0;
+             let totalDuration = 0;
              const listElement = item.parentElement.parentElement.parentElement.parentElement;
              listElement.querySelectorAll('._timerecord').forEach(function(record) {
-                 const duration = Math.floor(record.dataset.duration / 60);
-                 totalHours += parseInt(duration);
+                 totalDuration += parseInt(record.dataset.duration);
              });
 
-             item.innerText = totalHours > 0 ? `${totalHours}h` : '';
+             const totalHours = Math.floor(totalDuration / 60);
+             const totalMinutes = totalDuration - (totalHours * 60);
+             const paddedMinutes = totalMinutes < 10 ? `0${totalMinutes}` : totalMinutes;
+             item.innerText = totalHours > 0 ? `${totalHours}:${paddedMinutes}` : '';
          });
      }
 
@@ -613,7 +615,12 @@
      }
 
      function createTimeEntryElement(data) {
-         const duration = Math.floor(data.duration / 60);
+         const hours = Math.floor(data.duration / 60);
+         const minutes = data.duration - (hours * 60);
+         const paddedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+
+         let duration = (hours > 0 ? `${hours}h` : '') + (minutes > 0 ? `${paddedMinutes}m` : '');
+
          const el = document.createElement('div');
          el.className = '_timerecord';
          for(let key in data) {
@@ -632,7 +639,7 @@
          el.append(elTask);
          const elDuration = document.createElement('span');
          elDuration.className = '_duration';
-         elDuration.innerText = `${duration}h`;
+         elDuration.innerText = duration;
          el.append(elDuration);
 
          addTimeEntryElement(el);
