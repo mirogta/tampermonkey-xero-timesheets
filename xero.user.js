@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.10
+// @version      0.0.11
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -278,11 +278,17 @@ GM_addStyle(`
         appElement: null,
         isDeleteAllowed: true,
         isDemo: false,
+        isWalkthroughSeen: false,
     };
 
     const keys = {
         DELETE: 46,
     };
+
+    async function init() {
+        data.isWalkthroughSeen = await GM.getValue('isWalkthroughSeen', false);
+    }
+
 
     // See https://www.w3schools.com/charsets/ref_utf_symbols.asp
      GM_addStyle(`
@@ -333,7 +339,18 @@ GM_addStyle(`
 ._intro ._timerecord:not([data-user-id="demo"]) { display: none }
 .introjs-tooltipReferenceLayer, .introjs-tooltip { width: 360px; max-width: 360px; }
 .introjs-tooltiptext ._delete { visibility: visible; float: none; }
-._start_intro { padding: 4px; margin: 4px; }
+._intro_help { color: #666; padding: 0 10px; margin-top: 60px; }
+._help span { font-size: 20px; vertical-align: middle; color: #666; width: 20px; display: inline-block; }
+
+._like_popup { display: flex; align-items: center; justify-content: center; }
+._like_content { -webkit-box-flex: 0; -webkit-flex: none; -ms-flex: none; flex: none; max-width: 50%; width: 400px; z-index: 1000000; position: fixed; top: 400px; }
+._like_popup .introjs-tooltip { width: 420px; max-width: 420px; }
+._like_item { display: inline-block; width: 100px; float: left; margin: 20px; }
+._like_item::before { position: absolute; font-size: 22px; color: #0aa; margin-top: -8px; margin-left: -22px; }
+._like_star::before { content: " \\278a" }
+._like_script::before { content: " \\278b" }
+._like_kofi::before { content: " \\278c" }
+._like_popup center { clear: both; margin: 10px 0; text-align: center; font-weight: bold; }
 `);
 
      function clearSelectedTimeRecords() {
@@ -565,7 +582,7 @@ GM_addStyle(`
          data.appElement = document.getElementById('app');
      }
 
-    function finishIntro() {
+    function finishWalkthrough() {
         document.body.querySelectorAll('._demo,[data-user-id="demo"]').forEach(function(item) {
             item.remove();
         });
@@ -574,11 +591,53 @@ GM_addStyle(`
 
         clearSelectedTimeRecords();
         updateTotals();
+        setTimeout(hideHelp, 100);
         data.isDemo = false;
         data.isDeleteAllowed = true;
     }
 
-    function showIntro() {
+    function showHelp() {
+        const helpButton = document.querySelector('button[title="Help"]');
+        if(helpButton.classList.contains('xrh-focusable--parent-is-active') === false) {
+            helpButton.click();
+        }
+    }
+
+    function hideHelp() {
+        const helpButton = document.querySelector('button[title="Help"]');
+        if(helpButton.classList.contains('xrh-focusable--parent-is-active') === true) {
+            helpButton.click();
+        }
+    }
+
+    function showLikePopup() {
+        const html = '<div class="_like_popup"><div class="introjs-overlay" style="top: 0px; bottom: 0px; left: 0px; right: 0px; position: fixed; opacity: 0.8;"></div>' +
+              '<div class="_like_content">' +
+              '<div class="introjs-tooltip" role="dialog" style="left: 15px; bottom: 50px;">' +
+              '  <div class="introjs-tooltiptext"><h3>Do you like My Time?</h3><p>Your support keeps this project alive.</p><p>You can show your support by any or all of these options:</p>' +
+              '    <div class="_like_item _like_star">Add a star to the <a href="https://github.com/mirogta/tampermonkey-xero-timesheets" target="xero_userscript">GitHub project</a></div>' +
+              '    <div class="_like_item _like_script">Rate the script on <a href="https://openuserjs.org/scripts/mirogta/Xero_Timesheets_User_Script" target="openuserjs">OpenUserJS</a></div>' +
+              '    <div class="_like_item _like_kofi">Buy me a coffee on <a href="https://ko-fi.com/mirogta" target="kofi">Ko-Fi</a></div>' +
+              '    <center>Thank you!</center>' +
+              '  </div>' +
+              '  <div class="introjs-tooltipbuttons"><a class="introjs-button" role="button" tabindex="0">Close</a></div>' +
+              '</div></div>';
+        const el = createElement(html);
+        document.body.append(el);
+
+        el.querySelector('.introjs-overlay').addEventListener('click', function() {
+            el.remove();
+        }, false);
+        el.querySelector('.introjs-button').addEventListener('click', function() {
+            el.remove();
+        }, false);
+    }
+
+    function showWalkthrough() {
+
+        console.log('- show walkthrough');
+        data.isWalkthroughSeen = true;
+        GM.setValue('isWalkthroughSeen', true);
 
         const today = new Date();
         const targetDateUtc = today.toISOString();
@@ -593,10 +652,9 @@ GM_addStyle(`
         const sampleElement1 = document.body.querySelector('._timerecord[data-task-id="demo-1"]');
         sampleElement1.classList.add('_demo');
         sampleElement1.dataset.timeEntryId = 'demo-1';
-        sampleElement1.dataset.step = 1;
-        sampleElement1.dataset.intro = '<p><b>Welcome to the Xero Timesheets User Script Demo.</b></p>This is a sample time entry. You can select it by clicking on it<br>(it is currently selected for this demo).'
+        sampleElement1.dataset.step = '1';
+        sampleElement1.dataset.intro = '<p><b>Welcome to the Xero Timesheets User Script Walkthrough</b></p><p>If you skip this walkthrough now, you can always restart it using a link in the Help menu.</p><hr><p>This is a sample time entry. You can select it by clicking on it.</p>You can try it now.'
         sampleElement1.dataset.position = 'top';
-        sampleElement1.click();
 
         const sampleData2 = {
           userId: "demo",
@@ -607,10 +665,14 @@ GM_addStyle(`
         };
         cloneTimeEntryElement(sampleData2, targetDateUtc);
         const sampleElement2 = document.body.querySelector('._timerecord[data-task-id="demo-2"]');
+        const msg2 = '<p>You can select multiple time entries while holding a <b>Shift</b> key.</p>' +
+              '<p>While holding the Shift key, you can also deselect it.</p>' +
+              '<p>You can try it now.</p>' +
+              '<p>NOTE: You can always go back in this walkthrough to select the previous time entry, if you haven\'t selected it.</p>';
         sampleElement2.classList.add('_demo');
         sampleElement2.dataset.timeEntryId = 'demo-2';
-        sampleElement2.dataset.step = 2;
-        sampleElement2.dataset.intro = '<p>You can select multiple time entries while holding a Shift key<p>You can try it now!'
+        sampleElement2.dataset.step = '2';
+        sampleElement2.dataset.intro = msg2;
         sampleElement2.dataset.position = 'top';
 
         const tomorrow = new Date(today);
@@ -618,15 +680,29 @@ GM_addStyle(`
         const tomorrowUtc = tomorrow.toISOString().substring(0,10);
         const tomorrowRow = document.getElementById(`_${tomorrowUtc}`);
         const buttonAdd = createElement('<button class="_add _demo" style="visibility:visible"></button>');
+        const msg3 = '<p>You can use the <b>Paste</b> button to paste the selected time entries into any other day.</p>' +
+              '<p>The Paste button will appear when you mouse over different days, but only if you have some time entries selected.</p>' +
+              '<p>After you Paste selected time entries, temporary time entries will be displayed until the system confirms that they have been added successfully.</p>' +
+              '<p>You can try it now</p>' +
+              '<p>You can add many time entries into a single day and you can also add multiple entries with the same content.</p>' +
+              '<p>NOTE: The current version doesn\'t allow pasting to past months.</p>'
         buttonAdd.dataset.dateId = tomorrowUtc;
-        buttonAdd.dataset.step = 3;
-        buttonAdd.dataset.intro = '<p>You can use the <b>Paste</b> button to paste the selected time entries into any other day.</p><p>The Paste button will appear when you mouse over different days, but only if you have any time entries selected.</p><p>Note: You can\'t paste to past months so it won\'t appear there.</p>';
+        buttonAdd.dataset.step = '3';
+        buttonAdd.dataset.intro = msg3;
         buttonAdd.dataset.position = 'top';
+        buttonAdd.addEventListener('click', function() {
+            setTimeout(function() {
+                document.body.querySelectorAll('._timerecord:not([data-time-entry-id])').forEach(function(item) {
+                    item.dataset.timeEntryId = 'demo';
+                });
+                updateTotals();
+            }, 1000);
+        }, false);
         tomorrowRow.append(buttonAdd);
 
         const totalElement = document.body.querySelector('._today ._total');
-        totalElement.dataset.step = 4;
-        totalElement.dataset.intro = 'You can see the total number of hours from the time entries in each day.';
+        totalElement.dataset.step = '4';
+        totalElement.dataset.intro = 'You can see the total number of hours booked for each day.';
         totalElement.dataset.position = 'top';
 
         const sampleData3 = {
@@ -640,17 +716,25 @@ GM_addStyle(`
         const sampleElement3 = document.body.querySelector('._timerecord[data-task-id="demo-3"]');
         sampleElement3.classList.add('_demo');
         sampleElement3.dataset.timeEntryId='demo-3';
-        sampleElement3.dataset.step = 5;
+        sampleElement3.dataset.step = '5';
         sampleElement3.dataset.intro = '<p>You can delete a time entry using the <span class="_delete"></span> button which appears when you mouse over the time entry.'+
          '<p class="_tip">' +
-         '  <b>Pro Tip:</b> <ul><li>Press <b>Delete</b> key to delete selected item(s) with a&nbsp;confirmation.</li><li>Hold <b>Shift</b> key and press the <b>Delete</b> key to delete the selected item(s) without the confirmation (be careful, there\'s no undo).</li></ul>'+
+         '  <b>Pro Tip:</b> <ul><li>Press the <b>Delete</b> key to delete selected item(s) with a&nbsp;confirmation.</li><li>Hold a <b>Shift</b> key and press the <b>Delete</b> key to delete the selected item(s) without the confirmation. Be careful if you use this - you can quickly delete many time entries this way but there\'s no undo.</li></ul>'+
          '</p>' +
          '<p>You can try it now! Select the time entry below and try to delete it.</p>Don\'t worry, this is just a sample data, nothing will be actually deleted.';
         sampleElement3.dataset.position = 'bottom';
 
-        const helpButton = document.querySelector('button[title="Help"]');
-        helpButton.dataset.step = 6;
-        helpButton.dataset.intro = '<p>You can always restart this guide using "Restart Guide" button in the Help menu</p>';
+        const restartButton = document.querySelector('._intro_restart');
+        restartButton.dataset.step = 6;
+        restartButton.dataset.intro = '<p>You can find additional help for the <b>My Time</b> page in the <b>Help menu</b>.</p><p>You can also restart this walkthrough using the <b><span>&#x267b;</span> Restart Walkthrough</b> link here.</p>';
+
+        const issueButton = document.querySelector('._help_issue');
+        issueButton.dataset.step = 7;
+        issueButton.dataset.intro = '<p>If you find any issue or a missing feature, please report it using the link here.</p>';
+
+        const likeButton = document.querySelector('._help_like');
+        likeButton.dataset.step = 8;
+        likeButton.dataset.intro = '<p>This is the end of the walkthrough.</p><p>Thanks for watching!</p><p>If you like this Xero Timesheets User Script, you can sponsor its development using the link here.</p>';
 
         document.body.classList.add('_intro');
         data.isDeleteAllowed = false;
@@ -658,23 +742,46 @@ GM_addStyle(`
         updateTotals();
 
         const introOptions = {'showBullets': false, 'showProgress': true, 'hidePrev': true};
-        introJs().setOptions(introOptions).start().oncomplete(finishIntro).onexit(finishIntro).onafterchange(function(targetElement) {
-            if(targetElement.dataset.taskId === 'demo-3') {
+        introJs().setOptions(introOptions).start().oncomplete(finishWalkthrough).onexit(finishWalkthrough).onafterchange(function(targetElement) {
+            if(targetElement.dataset.step === '3') {
+                sampleElement1.classList.add('_selected');
+                sampleElement2.classList.add('_selected');
+            }
+            if(targetElement.dataset.step === '4') {
+                data.isDeleteAllowed = false;
+            }
+            if(targetElement.dataset.step === '5') {
                 targetElement.click();
                 data.isDeleteAllowed = true;
+                hideHelp();
+            }
+            if(targetElement.dataset.step === '6') {
+                showHelp();
             }
         });
     }
 
-    function addRestartIntroButton() {
+    function addRestartWalkthorughButton() {
         const helpList = document.querySelector('.help-list');
-        const introButton = createElement('<li class="xn-h-header-info-item"><button class="_start_intro">Restart Guide</button></li>');
-        introButton.addEventListener('click', showIntro, false);
+        const xeroSupport = createElement('<h3 class="_intro_help">My Time Help</h3>');
+        helpList.append(xeroSupport);
+
+        const introButton = createElement('<li class="xn-h-header-info-item _help"><a class="_intro_restart" href="#tampermonkey-my-time"><span>&#x267b;</span> Restart Walkthrough</a></li>');
+        introButton.addEventListener('click', showWalkthrough, false);
         helpList.append(introButton);
+
+        const issueButton = createElement('<li class="xn-h-header-info-item _help"><a class="_help_issue" href="https://github.com/mirogta/tampermonkey-xero-timesheets/issues" target="xero_userscript"><span>&#x2691;</span> Report an issue or a missing feature</a></li>');
+        helpList.append(issueButton);
+
+        const likeButton = createElement('<li class="xn-h-header-info-item _help"><a class="_help_like" href="#tampermonkey-my-time"><span>&#x263a;</span> Do you like My Time?</a></li>');
+        likeButton.addEventListener('click', showLikePopup, false);
+        helpList.append(likeButton);
     }
 
-     function showMyTime() {
+     async function showMyTime() {
          console.log('- show my time');
+         await init();
+
          findAppElement();
          clearAppContent();
          showTimeEntryHeader();
@@ -683,8 +790,11 @@ GM_addStyle(`
          registerTimesheetEvents();
          reloadTimeData();
 
-         //addRestartIntroButton();
-         //showIntro();
+         addRestartWalkthorughButton();
+        if(data.isWalkthroughSeen === false) {
+            showWalkthrough();
+        }
+
      }
 
      function reloadTimeData() {
@@ -855,10 +965,8 @@ GM_addStyle(`
          console.log(`Xero Timesheets User Script`);
          window._xero.loadAppData();
          window._xero.addMyTimeLink();
-         switch(document.location.pathname) {
-             case '/':
-                 window._xero.overlayProjects();
-                 break;
+         if(document.location.pathname === '/' && document.location.hash === '') {
+             window._xero.overlayProjects();
          }
 
          if(document.location.hash === '#tampermonkey-my-time') {
