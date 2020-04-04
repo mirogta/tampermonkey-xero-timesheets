@@ -29,6 +29,15 @@ Limitations:
 
 Then you can login to [projects.xero.com](https://projects.xero.com) and use the improvements.
 
+## Compatibility
+
+* Firefox >= 39
+* Chrome >= 42
+
+Unfortunately this script isn't compatible with Safari.
+
+It may work with the latest Microsoft Edge internet browser based on Chromium, but it hasn't been tested.
+
 ## How to update
 
 There is a check for any new updates of this script every day by default.
@@ -47,6 +56,7 @@ Licensed under [MIT License](./LICENSE).
 ## Technology Used
 
 * Xero
+* [IntroJS](https://introjs.com/)
 * VanillaJS
 * OpenUserJS
 * TamperMonkey
