@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.11
+// @version      0.0.12
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
 // @homepageURL  https://github.com/mirogta/tampermonkey-xero-timesheets
-// @match        https://projects.xero.com/*
+// @match        https://go.xero.com/app/*
+// @match        https://calendar.google.com/calendar/*
 // @grant        GM_addStyle
 // @grant        GM.addStyle
 // @grant        GM_setValue
@@ -34,10 +35,14 @@
 // https://material.io/design/color/the-color-system.html
 
 // sample requests:
+// - GET projects
+//   fetch("https://go.xero.com/api/projects/projects?includeSummary=false&states=INPROGRESS&term=", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","authorization":"Bearer ...","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","x-client":"xero-secure-fetch","xero-correlation-id":"95cc9942-d853-4924-adfe-bdb3a5d654cc","xero-tenant-shortcode":"!hhv2k"},"referrer":"https://go.xero.com/app/!hhv2k/projects/?CID=!hhv2k","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"});
 // - GET project tasks:
-//   fetch("https://projects.xero.com/api/projects/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/tasks", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"referrer":"https://projects.xero.com/project/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"}); ;
-// - GET one projects' timesheets:
-//   fetch("https://projects.xero.com/api/projects/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"referrer":"https://projects.xero.com/project/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"});
+//   fetch("https://go.xero.com/api/projects/projects/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/tasks", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"referrer":"https://projects.xero.com/project/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"}); ;
+// - GET one project's timesheets:
+//   fetch("https://go.xero.com/api/projects/projects/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"referrer":"https://projects.xero.com/project/3fecd493-1ffb-41c5-9f40-a6fd433b5c92/time","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"});
+// - GET all projects timesheets in a date range:
+//   fetch("https://go.xero.com/api/projects/time?dateAfterUtc=2020-03-29T23%3A00%3A00Z&dateBeforeUtc=2020-04-05T22%3A59%3A59Z&userId=c498ccf7-10b7-4aaf-8bdb-0e7cce8a8a17", {"credentials":"include","headers":{"accept":"application/json","accept-language":"en-GB,en-US;q=0.9,en;q=0.8","authorization":"Bearer ...","cache-control":"private, max-age=0, no-cache, no-store","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin","x-client":"xero-secure-fetch","xero-correlation-id":"a832aab3-256c-4688-b57b-70f8d2a4a1a1","xero-tenant-shortcode":"!hhv2k"},"referrer":"https://go.xero.com/app/!hhv2k/projects/time-entries?CID=%21hhv2k&date=2020-03-30&staff=c498ccf7-10b7-4aaf-8bdb-0e7cce8a8a17","referrerPolicy":"no-referrer-when-downgrade","body":null,"method":"GET","mode":"cors"});
 
 // Greasemonkey 4 polyfils
 // src: https://www.greasespot.net/2017/09/greasemonkey-4-for-script-authors.html
@@ -299,7 +304,7 @@ GM_addStyle(`
 ._timerecord { display: inline-block; border: 1px solid #fff; border-radius:4px; padding: 9px; width: 350px; white-space: nowrap; text-overflow: ellipsis; }
 ._timerecord:hover { border: 1px solid #aaa; cursor: pointer }
 ._add { visibility: hidden; cursor: pointer }
-#app._selecting .xui-pickitem:hover ._add { visibility: visible }
+._selecting .xui-pickitem:hover ._add { visibility: visible }
 ._add { position: absolute; left: 180px; top: 4px; padding: 10px; border-radius: 4px; }
 ._add:hover { background-color: #EF5350; color: white }
 ._today ._add { left: 210px }
@@ -357,7 +362,7 @@ GM_addStyle(`
          document.body.querySelectorAll('._selected').forEach(function(node) {
              node.classList.remove('_selected');
          });
-         document.getElementById('app').className = '';
+         document.getElementById('shell-app-root').className = '';
      }
 
      function timeEntryClicked(event, el) {
@@ -480,40 +485,54 @@ GM_addStyle(`
          }
      }
 
-     function postTimeEntry(projectId, taskId, duration, dateId) {
-         if(data.isDemo === true) {
-             return;
-         }
-
+    async function secureFetch(url, method, body, responseFn) {
          const userId = data.appData.currentUserId;
-         const url = `https://projects.xero.com/api/projects/${projectId}/time`;
-         const headers = {"accept":"application/json","content-type":"application/json","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"};
-         const body = `{\"taskId\":\"${taskId}\",\"userId\":\"${userId}\",\"duration\":${duration},\"dateUtc\":\"${dateId}T00:00:00Z\"}`;
-         console.log('- posting time entry', body);
-         fetch(url, {"credentials":"include","headers":headers,"body":body,"method":"POST","mode":"cors"})
-         .then(function(response) {
-             setTimeout(updateIncompleteElements, 200);
-         })
+         const referrer = document.location.origin + document.location.pathname;
+         const token = await window._xero.getToken();
+         const shortCode = document.location.pathname.match(/\/app\/([^/]+)\/projects\//)[1];
+         const headers = {
+             "accept":"application/json",
+             "accept-language":"en-GB,en-US;q=0.9,en;q=0.8",
+             "authorization":`Bearer ${token.access_token}`,
+             "cache-control":"private, max-age=0, no-cache, no-store",
+             "content-type":"application/json",
+             "sec-fetch-dest":"empty",
+             "sec-fetch-mode":"cors",
+             "sec-fetch-site":"same-origin",
+             "x-client":"xero-secure-fetch",
+             "xero-tenant-shortcode": shortCode,
+         };
+         // ommitted "xero-correlation-id":"a832aab3-256c-4688-b57b-70f8d2a4a1a1"
+         fetch(url, {"credentials":"include","headers":headers,"referrer":referrer,"referrerPolicy":"no-referrer-when-downgrade","body":body,"method":method,"mode":"cors"})
+         .then(responseFn)
          .catch(function(error) {
              console.log('Looks like there was a problem: \n', error);
          });
-      }
+    }
 
-     function deleteTimeEntry(projectId, timeEntryId) {
+     async function postTimeEntry(projectId, taskId, duration, dateId) {
          if(data.isDemo === true) {
              return;
          }
 
+         const url = `https://go.xero.com/api/projects/projects/${projectId}/time`;
          const userId = data.appData.currentUserId;
-         const url = `https://projects.xero.com/api/projects/${projectId}/time/${timeEntryId}`;
-         const headers = {"accept":"application/json","content-type":"application/json","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"};
+         const body = `{\"taskId\":\"${taskId}\",\"userId\":\"${userId}\",\"duration\":${duration},\"dateUtc\":\"${dateId}T00:00:00Z\"}`;
+         console.log('- posting time entry', body);
+         await secureFetch(url, "POST", body, function(response) {
+             setTimeout(updateIncompleteElements, 200);
+         });
+      }
+
+     async function deleteTimeEntry(projectId, timeEntryId) {
+         if(data.isDemo === true) {
+             return;
+         }
+
+         const url = `https://go.xero.com/api/projects/projects/${projectId}/time/${timeEntryId}`;
          console.log('- deleting time entry', timeEntryId);
-         fetch(url, {"credentials":"include","headers":headers,"body":null,"method":"DELETE","mode":"cors"})
-         .then(function(response) {
+         await secureFetch(url, "DELETE", null, function(response) {
              console.log(`- time entry ${timeEntryId} deleted`);
-         })
-         .catch(function(error) {
-             console.log('Looks like there was a problem: \n', error);
          });
      }
 
@@ -579,7 +598,7 @@ GM_addStyle(`
      }
 
      function findAppElement() {
-         data.appElement = document.getElementById('app');
+         data.appElement = document.getElementById('shell-app-root');
      }
 
     function finishWalkthrough() {
@@ -794,7 +813,6 @@ GM_addStyle(`
         if(data.isWalkthroughSeen === false) {
             showWalkthrough();
         }
-
      }
 
      function reloadTimeData() {
@@ -839,14 +857,16 @@ GM_addStyle(`
 
      function createTimeList() {
          const today = new Date();
-         const movingDate = new Date();
+         const todayDateId = today.toISOString().substring(0,10);
+         const timezoneOffset = today.getTimezoneOffset();
+         const movingDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, -timezoneOffset, 0);
          // start with 14 days into the future
          movingDate.addDays(14);
          const fragment = document.createDocumentFragment();
          // go backwards 14 days (to today's date) and another 30 days into the past
          for(let i=0; i<14+30; i++) {
              const dateId = movingDate.toISOString().substring(0,10);
-             const isToday = (movingDate.toISOString() === today.toISOString());
+             const isToday = (dateId === todayDateId);
              const isWeekend = movingDate.isWeekend();
              const isInPastMonths = movingDate.isInPastMonths();
              const className = 'xui-pickitem xui-u-flex xui-u-flex-justify-space-between ' + (isToday ? '_today ' : '') + (isWeekend ? '_weekend ' : '') + (isInPastMonths ? '_pastMonths ' : '');
@@ -935,21 +955,24 @@ GM_addStyle(`
          loadTimeDateByDate(dateAfter, dateBefore, showTimeData);
      }
 
-     function loadTimeDateByDate(dateAfter, dateBefore, action) {
+     async function loadTimeDateByDate(dateAfter, dateBefore, action) {
          console.log(`- loading timesheets ${dateAfter} - ${dateBefore}`);
          const userId = data.appData.currentUserId;
-         const url = `https://projects.xero.com/api/time?dateAfterUtc=${dateAfter}T00%3A00%3A00Z&dateBeforeUtc=${dateBefore}T23%3A59%3A59Z&userId=${userId}`;
-         fetch(url, {"credentials":"include","headers":{"accept":"application/json","content-type":"application/json","sec-fetch-dest":"empty","sec-fetch-mode":"cors","sec-fetch-site":"same-origin"},"body":null,"method":"GET","mode":"cors"})
-             .then(function(response) {
+         const url = `https://go.xero.com/api/projects/time?dateAfterUtc=${dateAfter}T00%3A00%3A00Z&dateBeforeUtc=${dateBefore}T23%3A59%3A59Z&userId=${userId}`;
+
+         await secureFetch(url, "GET", null, function(response) {
              response.json().then(action);
-         })
-             .catch(function(error) {
-             console.log('Looks like there was a problem: \n', error);
          });
      }
 
-     function loadAppData() {
-         data.appData = JSON.parse(document.getElementById('appData').innerText);
+    function loadAppData() {
+
+         // fetch https://go.xero.com/api/projects/app-data
+         const userId = document.getElementById('ga-client').dataset.userId;
+         data.appData = {
+             currentUserId: userId,
+         };
+         //data.appData = JSON.parse(document.getElementById('appData').innerText);
      }
 
     window._xero = window._xero || {};
@@ -957,27 +980,151 @@ GM_addStyle(`
     window._xero.loadAppData = loadAppData;
 })();
 
+// Google Calendar
+(function() {
+    'use strict';
+
+    const createElement = window._xero.createElement;
+
+    GM_addStyle(`
+._xero_export {
+  position: fixed;
+  top: 84px;
+  left: 164px;
+  z-index: 1000;
+}
+._xero_export button {
+  padding: 16px 60px 16px 14px;
+  border-radius: 30px;
+  color: #fff;
+  background:#00B7E2 url(https://edge.xero.com/images/1.0.0/favicon/favicon.ico) no-repeat right;
+}
+`);
+
+    function parseDuration(text) {
+        const regex = /(\d{2}):(\d{2}) to (\d{2}):(\d{2})/;
+        if(regex.test(text) === false) {
+            return null;
+        }
+        const matches = text.match(regex);
+        const from = new Date(2000,1,1,matches[1],matches[2],0);
+        const to = new Date(2000,1,1,matches[3],matches[4],0);
+        const diff = Math.abs(to.getTime() - from.getTime());
+        const seconds = diff / 1000;
+        const minutes = seconds / 60;
+        return minutes;
+    }
+
+    function parseEventText(text) {
+        // 09:10 to 09:20, Daily Scrum, <My Name>, Accepted, Location: <hangouts/slack/etc>, <Date e.g. 9 April 2020>
+        const parts = text.split(', ');
+        const date = new Date(parts[5]);
+        const time = parts[0];
+        const duration = parseDuration(time);
+        const data = {
+            date: date,
+            time: time,
+            duration: duration,
+            title: parts[1],
+            calendar: parts[2],
+            accepted: parts[3] === 'Accepted',
+            location: parts[4],
+        };
+        return data
+    }
+
+    function parseEvents() {
+        const events = document.querySelectorAll('[data-eventchip]');
+        console.log(`- found ${events.length} events`);
+        events.forEach(function(item) {
+            const id = item.dataset.eventid;
+            const details = item.querySelector('div');
+            const data = parseEventText(details.innerText);
+            console.log(data);
+        });
+    }
+
+    function googleInit() {
+        const xeroButton = createElement('<div class="_xero_export"><button>Load events to</button></div>');
+        document.body.appendChild(xeroButton);
+        xeroButton.querySelector('button').addEventListener('click', parseEvents, false);
+    }
+
+    window._xero = window._xero || {};
+    window._xero.googleInit = googleInit;
+})();
+
 // Loader
 (function() {
     'use strict';
 
-     function load() {
-         console.log(`Xero Timesheets User Script`);
+    console.log(`Xero Timesheets User Script loader`);
+
+     function loadXero() {
+         console.log(`Xero Timesheets User Script - projects.xero.com`);
          window._xero.loadAppData();
          window._xero.addMyTimeLink();
-         if(document.location.pathname === '/' && document.location.hash === '') {
+         if(/\/projects.*/.test(document.location.pathname) && document.location.hash === '') {
              window._xero.overlayProjects();
+             return false;
          }
 
          if(document.location.hash === '#tampermonkey-my-time') {
-             if(document.location.pathname != '/') {
-                 document.location.pathname = '/';
-                 return false;
-             }
+             //if(document.location.pathname != '/') {
+             //    document.location.pathname = '/';
+             //    return false;
+             //}
              window._xero.navigateToMyTimeLink();
          }
          return false;
      }
 
-    window._xero.waitForKeyElements('[data-loaded="true"]', load);
+    function loadGoogleCalendar() {
+        console.log(`Xero Timesheets User Script - calendar.google.com`);
+        //window._xero.googleInit();
+    }
+
+    window._xero.waitForKeyElements('[data-loaded="true"]', loadXero);
+    window._xero.waitForKeyElements('body[aria-busy="false"]', loadGoogleCalendar);
 })();
+
+// Authentication
+(function (open) {
+
+    function setToken(token) {
+        // TODO: setup timer to remove the token
+        GM.setValue('token', token);
+    }
+
+    async function getToken() {
+        const token = await GM.getValue('token', null);
+        return token;
+    }
+
+    const readyStateDone = 4;
+    const responseStatusOK = 200;
+    XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
+        this.addEventListener ("readystatechange", function(evt) {
+            if (this.readyState == readyStateDone  &&  this.status == responseStatusOK)
+            {
+                var jsonObj = null;
+                try {
+                    jsonObj = JSON.parse (this.responseText);
+                }
+                catch (err) {
+                    console.warn(err);
+                }
+                // NOTE: there are multiple `token` requests, but some have e.g. only the 'openid' scope and we need the one with 'xero_frontend-apis'
+                if (jsonObj && jsonObj.access_token && /xero_frontend-apis/.test(jsonObj.scope)) {
+                    // {id_token, access_token, expires_in: 720, token_type: "Bearer", scope: "openid profile email xero_frontend-apis"}
+                    setToken(jsonObj);
+                }
+            }
+        }, false);
+
+        open.call (this, method, url, async, user, pass);
+    };
+
+    window._xero.getToken = getToken;
+} ) (XMLHttpRequest.prototype.open);
+
