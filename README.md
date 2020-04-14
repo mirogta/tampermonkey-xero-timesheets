@@ -9,6 +9,7 @@ Features:
 * Projects page:
   * Added stars to projects
   * Added a toggle to show only starred projects
+  See [./features/projects.feature](./features/projects.feature)
 * New "My Time" page:
   * Added "My Time" link to the menu
   * Added copy&paste like functionality to copy timesheets from a day to another day
