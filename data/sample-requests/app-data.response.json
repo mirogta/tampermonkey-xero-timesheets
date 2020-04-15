@@ -1,0 +1,54 @@
+{
+  "analytics": {
+    "mixpanelToken": "<mixpanelToken>",
+    "telemetryUri": "https://edge.xero.com/platform/telemetry/1.0.1/telemetry.min.js",
+    "analyticsEnvironment": "prod",
+    "userIntercomMessageRole": "INTERCOM_MESSAGE_LIMITED",
+    "gaTrackerId": "<gaTrackerId>",
+    "intercomAppId": "<intercomAppId>"
+  },
+  "appData": {
+    "permissions": [
+      "INTERCOM_MESSAGE_LIMITED",
+      "PROJECTS_ACCESS"
+    ],
+    "features": [
+      {
+        "name": "web-bff-redirect",
+        "isEnabled": true
+      },
+      {
+        "name": "mark-as-invoiced",
+        "isEnabled": false
+      },
+      {
+        "name": "invoice-a-quote",
+        "isEnabled": false
+      }
+    ],
+    "organisation": {
+      "id": "<GUID>",
+      "idHashed": "<HASH>",
+      "name": "<organisation>",
+      "nameHtmlEncoded": "<organisation>",
+      "createdDate": "",
+      "provisionedDate": ":Projects",
+      "shortCode": "<shortCode>",
+      "timeZone": "<timeZone>",
+      "country": "<country>",
+      "region": "<region>",
+      "classOfOrg": "PREMIUM",
+      "isDemo": false,
+      "isTrial": false,
+      "isProvisioned": true
+    },
+    "user": {
+      "id": "<GUID>",
+      "idHashed": "<HASH>",
+      "fullNameHtmlEncoded": "<my_name>",
+      "isTestUser": false
+    },
+    "xeroUsersSettingsDeepLink": "https://go.xero.com/OrganisationLogin/Default.aspx?shortCode=<html_encoded_shortCode>&redirectUrl=%2FSetup%2FUsers.aspx",
+    "xeroAddToSubscriptionDeepLink": "https://my.xero.com/MyXero/V2/PricingPlan.aspx?sc=<shortCode>&addon=projects"
+  }
+}
