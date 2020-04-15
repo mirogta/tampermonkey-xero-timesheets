@@ -109,17 +109,19 @@ Solution?
 
 You can set up your own Google API project with your own Google API key. This allows you fully control access to your Google Calendar and as an extra security layer you can be sure that nobody else can use your Google API key. So when you authenticate to Google and the OAuth Consent Screen pops up saying that this is Unverified App, you can be ensured that the app is in fact your own and you have a full control over it (e.g. revoking access or the API keys should you wish to do so).
 
-This is actually good for me, because my first attempt at integrating with Google Calendar API would entail generating my personal Google API key and sharing it with everybody, so that you would not have to go through the burdens of setting it up, but then "I would share my personal Google API key with everybody" which didn't sound very exciting to me anyway… so Google made me not to do that. Thanks Google!
+This would be actually good for me, because my first attempt at integrating with Google Calendar API would entail generating my personal Google API key and sharing it with everybody, so that you would not have to go through the burdens of setting it up, but then "I would share my personal Google API key with everybody" which didn't sound very exciting to me anyway… so Google made me not to do that. Thanks Google!
+
+There is however a bit of a problem with this solution: It would require anyone who wants to use this to set up their own Google API project and Google API key appropriately, which might be a bit of a challenge and could be error-prone.
 
 Useful Links:
+
 * Calendar Quickstart: https://developers.google.com/calendar/quickstart/js
 * Credentials: https://console.developers.google.com/apis/credentials
 * Calendar API Authorization: https://developers.google.com/calendar/auth
 
+## Integration with Google Calendar website
 
-Client ID: 606125206669-74arej6veog4lo0845672pb9ln2eapq6.apps.googleusercontent.com
-Client Secret: FnYXb_fkl6xfUi6mAmsrH5_f
-API Key: AIzaSyCDJP22JIvGflqJI6uvDwJGKnP4WGeW6lk
+Rather than using Google Calendar API, it is actually possible to run the user script within the context of the <https://calendar.google.com> website and process the page to get your calendar events. You get a full control over what is displayed on the page and what gets "sent" over to the Xero Projects "My Time" page, as this would be completely happening locally in your browser and no traffic would be sent over the internet to/from Google.
 
 ## License
 
