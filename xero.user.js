@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.13
+// @version      0.0.14
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -19,6 +19,7 @@
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/gm4-polyfil.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/intro.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/intro-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/flag-icon-css.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/common.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/auth.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/help.js
@@ -40,6 +41,7 @@
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/gm4-polyfil.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/intro.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/intro-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/vendor/flag-icon-css.min.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/common.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/auth.js
 // @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.13/lib/help.js
@@ -53,6 +55,7 @@
 // @require      http://localhost:8100/vendor/gm4-polyfil.min.js
 // @require      http://localhost:8100/vendor/intro.min.js
 // @require      http://localhost:8100/vendor/intro-css.min.js
+// @require      http://localhost:8100/vendor/flag-icon-css.min.js
 // @require      http://localhost:8100/lib/common.js
 // @require      http://localhost:8100/lib/auth.js
 // @require      http://localhost:8100/lib/help.js

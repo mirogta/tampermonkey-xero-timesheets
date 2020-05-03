@@ -17,6 +17,7 @@ Features:
   * You can select multiple timesheets while holding a *Shift* key
   * You can delete multiple timesheets with a *Delete* key - it will ask for a confirmation
     * If you hold a *Shift* key, then it won't ask for a confirmation - use this carefully, there's no Undo
+  * Show public/bank holidays (currently in the UK only)
 
 Limitations:
 
@@ -53,11 +54,9 @@ If you want to trigger an update for a newer version in Tampermonkey:
 
 Pre-Requisites:
 
-* Ruby
+* Docker
 
-Run `ruby -run -ehttpd . -p8100` to start a local web server.
-
-I've chosen a minimal Ruby server because Ruby is pre-installed on Ubuntu and MacOS (sorry Windows users) and doesn't require any other dependencies (like `npm` or `python`… see https://gist.github.com/willurd/5720255).
+Run `./dev/run-httpd.sh` which runs *nginx* container in your local Docker instance.
 
 Modify the `@require` links in the `/UserScript` section of the user script to point to the local web server rather than to GitHub.
 
@@ -122,6 +121,10 @@ Useful Links:
 ## Integration with Google Calendar website
 
 Rather than using Google Calendar API, it is actually possible to run the user script within the context of the <https://calendar.google.com> website and process the page to get your calendar events. You get a full control over what is displayed on the page and what gets "sent" over to the Xero Projects "My Time" page, as this would be completely happening locally in your browser and no traffic would be sent over the internet to/from Google.
+
+## Links
+
+* <https://gist.github.com/willurd/5720255> - I've tried the minimal Ruby server `ruby -run -ehttpd . -p8100` but it doesn't support ETag and caching well. So ended up with using NGINX Docker container for local development instead.
 
 ## License
 
