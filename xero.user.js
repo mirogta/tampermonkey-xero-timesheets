@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xero Timesheets User Script
 // @namespace    https://github.com/mirogta/tampermonkey-xero-timesheets
-// @version      0.0.17
+// @version      0.0.18
 // @description  Script to help with submitting timesheets in Xero
 // @author       mirogta
 // @license      MIT
@@ -16,17 +16,18 @@
 // @grant        GM.getValue
 // @grant        GM_notification
 // @grant        GM.notification
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/gm4-polyfil.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/intro.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/intro-css.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/flag-icon-css.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/common.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/project-list.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/my-time.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/my-time-link.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/help.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/intro.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/google-calendar.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/gm4-polyfil.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/intro.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/intro-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/flag-icon-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/google-analytics.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/common.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/project-list.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/my-time.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/my-time-link.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/help.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/intro.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/google-calendar.js
 // @run-at       document-end
 // @compatible   firefox >=39
 // @compatible   chrome >=42
@@ -37,23 +38,25 @@
 // ==/OpenUserJS==
 
 // Original @requires:
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/gm4-polyfil.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/intro.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/intro-css.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/vendor/flag-icon-css.min.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/common.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/project-list.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/my-time.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/my-time-link.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/help.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/intro.js
-// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.17/lib/google-calendar.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/gm4-polyfil.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/intro.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/intro-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/vendor/flag-icon-css.min.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/google-analytics.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/common.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/project-list.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/my-time.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/my-time-link.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/help.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/intro.js
+// @require      https://github.com/mirogta/tampermonkey-xero-timesheets/raw/0.0.18/lib/google-calendar.js
 
 // Dev @requires:
 // @require      http://localhost:8100/vendor/gm4-polyfil.min.js
 // @require      http://localhost:8100/vendor/intro.min.js
 // @require      http://localhost:8100/vendor/intro-css.min.js
 // @require      http://localhost:8100/vendor/flag-icon-css.min.js
+// @require      http://localhost:8100/lib/google-analytics.js
 // @require      http://localhost:8100/lib/common.js
 // @require      http://localhost:8100/lib/project-list.js
 // @require      http://localhost:8100/lib/my-time.js
@@ -76,7 +79,7 @@
 
     function loadXero() {
          console.log(`Xero Timesheets User Script - go.xero.com`);
-
+         document.body.dispatchEvent(new Event('loadGoogleAnalytics'));
          document.body.dispatchEvent(new Event('loadAppData'));
 
          if(featureFlags.enableMyTime === true) {
@@ -100,6 +103,7 @@
         }
 
         console.log(`Xero Timesheets User Script - calendar.google.com`);
+        document.body.dispatchEvent(new Event('loadGoogleAnalytics'));
         document.body.dispatchEvent(new Event('googleCalendarInit'));
     }
 

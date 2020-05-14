@@ -122,9 +122,16 @@ Useful Links:
 
 Rather than using Google Calendar API, it is actually possible to run the user script within the context of the <https://calendar.google.com> website and process the page to get your calendar events. You get a full control over what is displayed on the page and what gets "sent" over to the Xero Projects "My Time" page, as this would be completely happening locally in your browser and no traffic would be sent over the internet to/from Google.
 
+## Integration with Google Analytics
+
+The script is using Google Analytics to anonymously track its usage.
+
+It does not collect any personal details or any information about your projects or timesheets.
+
 ## Links
 
 * <https://gist.github.com/willurd/5720255> - I've tried the minimal Ruby server `ruby -run -ehttpd . -p8100` but it doesn't support ETag and caching well. So ended up with using NGINX Docker container for local development instead.
+* <https://developers.google.com/analytics/devguides/collection/gtagjs/events> - Event tracking for Google Analytics
 
 ## License
 
@@ -138,3 +145,5 @@ Licensed under [MIT License](./LICENSE).
 * OpenUserJS
 * TamperMonkey
 * GreaseMonkey
+* Google Calendar
+* Google Analytics
